@@ -1,0 +1,647 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Daniel Academy</title>
+<meta name="theme-color" content="#085B9C" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0A3F6E" media="(prefers-color-scheme: dark)">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Daniel Academy">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="description" content="Emploi du temps des élèves de Daniel Academy avec rappels avant chaque cours.">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<link rel="icon" href="favicon.png">
+<style>
+/* Layout: blue masthead with the academy shield, today's status card, a week strip, then the day's courses as a time-led list. A gold button floats for adding. */
+:root{
+  --bg:#F2F6FB; --surface:#FFFFFF; --ink:#0E1A2B; --muted:#576A82; --line:#DCE5F0;
+  --head:#085B9C; --live:#085B9C; --btn:#085B9C; --on-btn:#FFFFFF;
+  --gold:#BE8C3B; --gold-ink:#7E5710; --gold-soft:#F7EDDA; --on-gold:#1B1305;
+  --blue-soft:#E4EFF9; --danger:#B93030; --danger-soft:#FBEAEA;
+  --font:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,system-ui,sans-serif;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+  --shadow:0 1px 2px rgba(8,40,80,.06),0 6px 18px rgba(8,40,80,.08);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#08111C; --surface:#0F1C2C; --ink:#E7EEF7; --muted:#92A4BA; --line:#1D3048;
+    --head:#0A3F6E; --live:#12518B; --btn:#2578C4; --on-btn:#FFFFFF;
+    --gold:#D6A650; --gold-ink:#E6C27F; --gold-soft:#2A2314; --on-gold:#1B1305;
+    --blue-soft:#112A42; --danger:#EE7B7B; --danger-soft:#2E1717;
+    --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+    color-scheme:dark;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#08111C; --surface:#0F1C2C; --ink:#E7EEF7; --muted:#92A4BA; --line:#1D3048;
+  --head:#0A3F6E; --live:#12518B; --btn:#2578C4; --on-btn:#FFFFFF;
+  --gold:#D6A650; --gold-ink:#E6C27F; --gold-soft:#2A2314; --on-gold:#1B1305;
+  --blue-soft:#112A42; --danger:#EE7B7B; --danger-soft:#2E1717;
+  --shadow:0 1px 2px rgba(0,0,0,.4),0 6px 18px rgba(0,0,0,.35);
+  color-scheme:dark;
+}
+*{box-sizing:border-box;margin:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:var(--font);background:var(--bg);color:var(--ink);min-height:100vh;min-height:100dvh;-webkit-tap-highlight-color:transparent;line-height:1.4}
+button,input,select{font:inherit;color:inherit}
+button{background:none;border:0;cursor:pointer}
+svg{display:block;flex:none}
+:focus-visible{outline:3px solid var(--gold);outline-offset:2px}
+.wrap{max-width:560px;margin:0 auto;padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* Masthead */
+.top{background:var(--head);color:#fff;border-bottom:2px solid var(--gold);padding-top:env(safe-area-inset-top,0px)}
+.top .wrap{display:flex;align-items:center;gap:12px;padding-block:12px}
+.logo{background:#fff;border-radius:10px;padding:4px 6px;box-shadow:0 1px 0 rgba(0,0,0,.15)}
+.logo img{height:46px;width:auto;display:block}
+.brand{flex:1;min-width:0}
+.brand h1{font-size:20px;line-height:1.15;font-weight:700;letter-spacing:.01em}
+.brand p{font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;color:#EBCB8E;margin-top:4px}
+.icon-btn{width:44px;height:44px;border-radius:12px;display:grid;place-items:center}
+.top .icon-btn{color:#fff;background:rgba(255,255,255,.12)}
+.top .icon-btn:active{background:rgba(255,255,255,.22)}
+
+main{padding-block:18px 120px}
+.date{font-size:13px;color:var(--muted);margin-bottom:10px;font-weight:500}
+
+/* Banners */
+.banner{display:flex;flex-direction:column;gap:10px;background:var(--gold-soft);border:1px solid color-mix(in srgb,var(--gold) 45%,transparent);border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:14px}
+.banner b{font-weight:650}
+.banner .row{display:flex;gap:8px;flex-wrap:wrap}
+.btn{min-height:44px;padding:0 18px;border-radius:12px;font-weight:600;font-size:15px;display:inline-flex;align-items:center;justify-content:center;gap:8px}
+.btn.primary{background:var(--btn);color:var(--on-btn)}
+.btn.ghost{background:var(--blue-soft);color:var(--ink)}
+.btn.danger{background:var(--danger-soft);color:var(--danger)}
+.btn.danger.armed{background:var(--danger);color:#fff}
+.btn.small{min-height:38px;padding:0 14px;font-size:14px}
+.btn:active{filter:brightness(.92)}
+
+/* Status card */
+.now{background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:16px;box-shadow:var(--shadow);margin-bottom:18px}
+.now .head{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-bottom:8px}
+.eyebrow{font-size:11.5px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-ink)}
+.pill{font-family:var(--mono);font-size:13px;font-weight:600;background:var(--gold-soft);color:var(--gold-ink);padding:4px 10px;border-radius:999px;white-space:nowrap}
+.now h2{font-size:24px;line-height:1.15;font-weight:700;text-wrap:balance;overflow-wrap:anywhere}
+.now .meta{margin-top:6px;color:var(--muted);font-size:14px}
+.now .mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+.now.live{background:var(--live);border-color:transparent;color:#fff}
+.now.live .eyebrow{color:#F1D49A}
+.now.live .meta{color:rgba(255,255,255,.82)}
+.now.live .pill{background:rgba(255,255,255,.16);color:#fff}
+.progress{height:6px;border-radius:99px;background:rgba(255,255,255,.25);margin-top:14px;overflow:hidden}
+.progress i{display:block;height:100%;background:#E8B95F;border-radius:99px}
+.now.empty p{color:var(--muted);margin-top:6px;font-size:14px}
+
+/* Week strip */
+.days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;margin-bottom:20px}
+.day{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 0 7px;border-radius:14px;background:var(--surface);border:1px solid var(--line);min-height:62px}
+.day small{font-size:10.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.day strong{font-family:var(--mono);font-size:17px;font-variant-numeric:tabular-nums}
+.day .dot{width:5px;height:5px;border-radius:50%;background:transparent;margin-top:1px}
+.day.has .dot{background:var(--gold)}
+.day.today strong{color:var(--gold-ink)}
+.day[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+.day[aria-pressed="true"] small{color:rgba(255,255,255,.8)}
+.day[aria-pressed="true"] strong{color:#fff}
+.day[aria-pressed="true"].has .dot{background:#F1D49A}
+
+/* Course list */
+.day-title{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:12px}
+.day-title h2{font-size:18px;font-weight:700}
+.day-title span{font-size:13px;color:var(--muted)}
+.list{list-style:none;padding:0;display:flex;flex-direction:column;gap:10px}
+.item{display:grid;grid-template-columns:52px minmax(0,1fr);gap:12px;align-items:start}
+.time{text-align:right;padding-top:13px;font-family:var(--mono);font-variant-numeric:tabular-nums}
+.time b{display:block;font-size:15px}
+.time span{font-size:12px;color:var(--muted)}
+.card{width:100%;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;min-width:0}
+.card:active{background:var(--blue-soft)}
+.card .name{display:flex;align-items:center;gap:9px;font-size:16.5px;font-weight:650;min-width:0}
+.card .name span.t{overflow-wrap:anywhere}
+.swatch{width:11px;height:11px;border-radius:4px;flex:none}
+.tag{font-size:10.5px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;padding:2px 7px;border-radius:99px;background:var(--blue-soft);color:var(--ink);flex:none}
+.tag.gold{background:var(--gold-soft);color:var(--gold-ink)}
+.card .info{display:flex;flex-wrap:wrap;gap:4px 14px;font-size:13px;color:var(--muted)}
+.card .info span{display:inline-flex;align-items:center;gap:5px}
+.item.live .card{border-color:var(--btn);background:var(--blue-soft)}
+.item.past{opacity:.55}
+.empty-day{text-align:center;padding:26px 16px;background:var(--surface);border:1px dashed var(--line);border-radius:14px;color:var(--muted);font-size:14.5px;display:flex;flex-direction:column;gap:12px;align-items:center}
+
+/* Floating add */
+.fab{position:fixed;right:max(16px,env(safe-area-inset-right,0px));bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--gold);color:var(--on-gold);min-height:54px;padding:0 20px 0 16px;border-radius:99px;font-weight:700;font-size:16px;display:flex;align-items:center;gap:8px;box-shadow:0 8px 22px rgba(0,0,0,.28)}
+.fab:active{filter:brightness(.93)}
+
+/* Toast */
+.toast{position:fixed;left:50%;transform:translateX(-50%);top:calc(10px + env(safe-area-inset-top,0px));z-index:50;max-width:min(92vw,420px);background:var(--ink);color:var(--bg);padding:12px 16px;border-radius:14px;font-size:14.5px;font-weight:550;box-shadow:0 10px 30px rgba(0,0,0,.3)}
+
+/* Sheets */
+dialog{border:0;padding:0;background:var(--surface);color:var(--ink);width:100%;max-width:560px;margin:auto auto 0;border-radius:22px 22px 0 0;max-height:92vh;max-height:92dvh;overflow:auto}
+dialog::backdrop{background:rgba(4,10,18,.58)}
+dialog[open]{animation:up .22s ease-out}
+@keyframes up{from{transform:translateY(28px);opacity:0}to{transform:none;opacity:1}}
+.sheet{padding:18px 20px calc(22px + env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:16px}
+.sheet-head{display:flex;justify-content:space-between;align-items:center}
+.sheet-head h2{font-size:20px;font-weight:700}
+.sheet .icon-btn{background:var(--blue-soft)}
+.field{display:flex;flex-direction:column;gap:6px;border:0;padding:0;min-width:0}
+.field>span,.field>legend{font-size:13px;font-weight:600;color:var(--muted);padding:0}
+input[type=text],input[type=time],select{width:100%;height:48px;border-radius:12px;border:1px solid var(--line);background:var(--bg);padding:0 12px;font-size:16px;color:var(--ink);-webkit-appearance:none;appearance:none}
+input[type=time]{min-width:0}
+select{background-image:linear-gradient(45deg,transparent 50%,var(--muted) 50%),linear-gradient(135deg,var(--muted) 50%,transparent 50%);background-position:calc(100% - 20px) 21px,calc(100% - 14px) 21px;background-size:6px 6px;background-repeat:no-repeat;padding-right:36px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{min-width:46px;height:44px;padding:0 10px;border-radius:12px;border:1px solid var(--line);background:var(--bg);font-weight:600;font-size:14px}
+.chip[aria-pressed="true"]{background:var(--btn);border-color:var(--btn);color:var(--on-btn)}
+.err{color:var(--danger);font-size:14px;font-weight:600}
+.actions{display:flex;flex-direction:column;gap:8px}
+.block{display:flex;flex-direction:column;gap:10px;padding-top:16px;border-top:1px solid var(--line)}
+.block:first-of-type{border-top:0;padding-top:0}
+.block h3{font-size:16px;font-weight:700}
+.hint{font-size:14px;color:var(--muted)}
+.hint.small{font-size:12.5px}
+.btns{display:flex;gap:8px;flex-wrap:wrap}
+ol.steps{padding-left:20px;display:flex;flex-direction:column;gap:6px;font-size:14px;color:var(--muted)}
+ol.steps b{color:var(--ink);font-weight:650}
+#share-url{font-size:13px;height:42px}
+.ok{color:var(--gold-ink);font-weight:650}
+
+@media (prefers-reduced-motion:reduce){dialog[open]{animation:none}}
+@media (max-width:360px){.brand h1{font-size:18px}.day strong{font-size:15px}}
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="wrap">
+    <div class="logo"><img src="logo.png" alt="Logo Daniel Academy"></div>
+    <div class="brand">
+      <h1>Daniel Academy</h1>
+      <p>Discipline · Rigueur · Réussite</p>
+    </div>
+    <button id="open-settings" class="icon-btn" aria-label="Réglages">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 7h10M18 7h2M4 17h2M10 17h10"/><circle cx="16" cy="7" r="2"/><circle cx="8" cy="17" r="2"/></svg>
+    </button>
+  </div>
+</header>
+
+<main class="wrap">
+  <p id="today-label" class="date"></p>
+  <div id="banners"></div>
+  <section id="now" aria-live="polite"></section>
+  <nav id="days" class="days" aria-label="Jours de la semaine"></nav>
+  <div class="day-title"><h2 id="day-name"></h2><span id="day-count"></span></div>
+  <ul id="list" class="list"></ul>
+</main>
+
+<button id="fab" class="fab">
+  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+  Ajouter un cours
+</button>
+
+<div id="toast" class="toast" role="status" hidden></div>
+
+<dialog id="dlg-course">
+  <form id="form-course" class="sheet" novalidate>
+    <div class="sheet-head">
+      <h2 id="course-title">Nouveau cours</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+    <label class="field"><span>Matière</span>
+      <input id="f-name" type="text" list="subjects" placeholder="Ex. Algorithmique" autocomplete="off" maxlength="60">
+    </label>
+    <datalist id="subjects">
+      <option value="Anglais"><option value="Espagnol"><option value="Algorithmique"><option value="Programmation Python"><option value="Développement web"><option value="Bases de données"><option value="Réseaux informatiques"><option value="Systèmes d'exploitation"><option value="Architecture des ordinateurs"><option value="Cybersécurité"><option value="Mathématiques"><option value="Intelligence artificielle">
+    </datalist>
+    <fieldset class="field"><legend>Jours</legend><div id="f-days" class="chips"></div></fieldset>
+    <div class="row2">
+      <label class="field"><span>Début</span><input id="f-start" type="time" value="08:00"></label>
+      <label class="field"><span>Fin</span><input id="f-end" type="time" value="10:00"></label>
+    </div>
+    <label class="field"><span>Salle (facultatif)</span><input id="f-room" type="text" placeholder="Ex. Salle B2" maxlength="40" autocomplete="off"></label>
+    <label class="field"><span>Rappel</span>
+      <select id="f-lead">
+        <option value="-1">Aucun rappel</option>
+        <option value="0">À l'heure du cours</option>
+        <option value="5">5 minutes avant</option>
+        <option value="10" selected>10 minutes avant</option>
+        <option value="15">15 minutes avant</option>
+        <option value="30">30 minutes avant</option>
+        <option value="60">1 heure avant</option>
+      </select>
+    </label>
+    <p id="f-err" class="err" role="alert" hidden></p>
+    <div class="actions">
+      <button class="btn primary" type="submit">Enregistrer</button>
+      <button class="btn danger" type="button" id="btn-del" hidden>Supprimer ce cours</button>
+    </div>
+  </form>
+</dialog>
+
+<dialog id="dlg-settings">
+  <div class="sheet">
+    <div class="sheet-head">
+      <h2>Réglages</h2>
+      <button type="button" class="icon-btn" data-close aria-label="Fermer"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    </div>
+
+    <section class="block">
+      <h3>Notifications</h3>
+      <p id="notif-text" class="hint"></p>
+      <div class="btns">
+        <button id="btn-notif" class="btn primary" type="button">Activer les notifications</button>
+        <button id="btn-test" class="btn ghost" type="button" hidden>Envoyer un test</button>
+      </div>
+      <p class="hint small">Elles arrivent quand l'appli est ouverte ou vient d'être utilisée. Pour être prévenu même appli fermée, ajoute tes cours à Calendrier ci-dessous.</p>
+    </section>
+
+    <section class="block">
+      <h3>Rappels dans Calendrier</h3>
+      <p class="hint">Crée tous tes cours chaque semaine dans l'app Calendrier de l'iPhone, avec une alerte avant chaque cours. Ça sonne même quand l'appli est fermée.</p>
+      <div class="btns"><button id="btn-ics" class="btn primary" type="button">Ajouter à Calendrier</button></div>
+      <p class="hint small">Dans le menu qui s'ouvre, choisis Calendrier. Sinon, enregistre le fichier dans Fichiers puis ouvre-le.</p>
+    </section>
+
+    <section class="block">
+      <h3>Partager avec ma classe</h3>
+      <p class="hint">Envoie ton emploi du temps par WhatsApp. Tes camarades ouvrent le lien et l'importent en un geste.</p>
+      <div class="btns"><button id="btn-share" class="btn ghost" type="button">Partager le lien</button></div>
+      <input id="share-url" type="text" readonly hidden aria-label="Lien de partage">
+    </section>
+
+    <section class="block">
+      <h3>Installer sur l'iPhone</h3>
+      <ol class="steps">
+        <li>Ouvre ce lien dans <b>Safari</b>.</li>
+        <li>Touche <b>Partager</b>, puis <b>Sur l'écran d'accueil</b>.</li>
+        <li>Ouvre l'appli depuis son icône, puis active les notifications.</li>
+      </ol>
+    </section>
+
+    <section class="block">
+      <button id="btn-reset" class="btn danger" type="button">Effacer tous mes cours</button>
+    </section>
+  </div>
+</dialog>
+
+<script>
+(function(){
+'use strict';
+var KEY='da_courses_v1', FIRED='da_fired_v1', HINT='da_hint_v1';
+var DAYS=['Lun','Mar','Mer','Jeu','Ven','Sam','Dim'];
+var DAYS_LONG=['Lundi','Mardi','Mercredi','Jeudi','Vendredi','Samedi','Dimanche'];
+var BYDAY=['MO','TU','WE','TH','FR','SA','SU'];
+var LEADS=[-1,0,5,10,15,30,60];
+var TIME=/^([01]\d|2[0-3]):[0-5]\d$/;
+var COLORS=['#2F7BD6','#1E9E8F','#C8922E','#D9593F','#3F9A4F','#7A5BD0','#C94B86','#5B7089'];
+
+var $=function(s){return document.querySelector(s)};
+var courses=[], sel=0, editingId=null, pendingImport=null;
+
+/* ---------- helpers ---------- */
+function esc(s){return String(s).replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]})}
+function mins(t){var p=t.split(':');return +p[0]*60+ +p[1]}
+function pad(n){return String(n).padStart(2,'0')}
+function uid(){return Math.random().toString(36).slice(2,8)+Date.now().toString(36)}
+function wdOf(d){return (d.getDay()+6)%7}
+function ymd(d){return d.getFullYear()+pad(d.getMonth()+1)+pad(d.getDate())}
+function colorOf(name){var h=0,s=name.toLowerCase();for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return COLORS[h%COLORS.length]}
+function fmtDur(m){
+  m=Math.max(0,Math.round(m));
+  if(m<60)return m+' min';
+  var h=Math.floor(m/60),r=m%60;
+  if(h>=24){var d=Math.floor(h/24),hh=h%24;return d+' j'+(hh?' '+hh+' h':'')}
+  return h+' h'+(r?' '+pad(r):'');
+}
+function leadText(l){return l<0?'Sans rappel':l===0?'Rappel à l\'heure':'Rappel '+(l===60?'1 h':l+' min')+' avant'}
+var bellSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 16v-5a6 6 0 1 1 12 0v5l1.5 2h-15zM10 21h4"/></svg>';
+var pinSvg='<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 21s7-6.2 7-11a7 7 0 1 0-14 0c0 4.8 7 11 7 11z"/><circle cx="12" cy="10" r="2.5"/></svg>';
+
+/* ---------- storage ---------- */
+function save(){try{localStorage.setItem(KEY,JSON.stringify(courses))}catch(e){}}
+function load(){
+  try{var r=localStorage.getItem(KEY);if(r){var a=JSON.parse(r);if(Array.isArray(a))return a}}catch(e){}
+  return null;
+}
+function examples(){
+  function c(n,d,s,e,r){return {id:uid(),name:n,days:d,start:s,end:e,room:r,lead:10,ex:true}}
+  return [
+    c('Anglais',[0,2],'08:00','10:00','Salle A1'),
+    c('Espagnol',[0,3],'12:00','14:00','Salle A3'),
+    c('Algorithmique',[1],'08:00','11:00','Labo 2'),
+    c('Bases de données',[2],'14:00','16:00','Labo 1'),
+    c('Réseaux informatiques',[4],'09:00','12:00','Salle B2')
+  ];
+}
+
+/* ---------- share link ---------- */
+function b64e(s){return btoa(String.fromCharCode.apply(null,new TextEncoder().encode(s))).replace(/\+/g,'-').replace(/\//g,'_').replace(/=+$/,'')}
+function b64d(s){s=s.replace(/-/g,'+').replace(/_/g,'/');while(s.length%4)s+='=';return new TextDecoder().decode(Uint8Array.from(atob(s),function(c){return c.charCodeAt(0)}))}
+function readShare(){
+  var m=location.hash.match(/^#s=([A-Za-z0-9_-]+)$/);if(!m)return null;
+  try{
+    var arr=JSON.parse(b64d(m[1]));
+    if(!Array.isArray(arr)||arr.length>80)return null;
+    var out=[];
+    arr.forEach(function(r){
+      if(!Array.isArray(r))return;
+      var name=r[0],days=String(r[1]),start=r[2],end=r[3],room=r[4],lead=r[5];
+      if(typeof name!=='string'||!name.trim()||!/^[0-6]{1,7}$/.test(days)||!TIME.test(start)||!TIME.test(end)||mins(end)<=mins(start))return;
+      var set={};days.split('').forEach(function(d){set[d]=1});
+      out.push({id:uid(),name:name.slice(0,60),days:Object.keys(set).map(Number).sort(),start:start,end:end,room:typeof room==='string'?room.slice(0,40):'',lead:LEADS.indexOf(lead)>-1?lead:10});
+    });
+    return out.length?out:null;
+  }catch(e){return null}
+}
+function clearHash(){try{history.replaceState(null,'',location.pathname+location.search)}catch(e){}}
+
+/* ---------- status (live / next) ---------- */
+function nowInfo(){
+  var d=new Date(),wd=wdOf(d),m=d.getHours()*60+d.getMinutes()+d.getSeconds()/60,i;
+  var live=courses.filter(function(c){return c.days.indexOf(wd)>-1&&mins(c.start)<=m&&m<mins(c.end)}).sort(function(a,b){return mins(a.start)-mins(b.start)})[0];
+  if(live){var dur=mins(live.end)-mins(live.start);return {type:'live',c:live,left:mins(live.end)-m,pct:Math.min(100,Math.max(0,(m-mins(live.start))/dur*100))}}
+  var best=null;
+  for(var off=0;off<=7;off++){
+    var day=(wd+off)%7;
+    for(i=0;i<courses.length;i++){
+      var c=courses[i];if(c.days.indexOf(day)<0)continue;
+      var delta=off*1440+mins(c.start)-m;if(delta<=0)continue;
+      if(!best||delta<best.delta)best={type:'next',c:c,delta:delta,off:off,day:day};
+    }
+  }
+  return best||{type:'none'};
+}
+function whenText(n){
+  var t=n.c.start;
+  if(n.off===0)return 'Aujourd\'hui à '+t;
+  if(n.off===1)return 'Demain à '+t;
+  return DAYS_LONG[n.day]+(n.off>=7?' prochain':'')+' à '+t;
+}
+function infoLine(c){return '<span class="mono">'+c.start+' – '+c.end+'</span>'+(c.room?' · '+esc(c.room):'')}
+
+function renderNow(){
+  var n=nowInfo(),el=$('#now'),h;
+  if(n.type==='live'){
+    h='<article class="now live"><div class="head"><span class="eyebrow">En cours</span><span class="pill">'+fmtDur(Math.ceil(n.left))+' restantes</span></div>'+
+      '<h2>'+esc(n.c.name)+'</h2><p class="meta">'+infoLine(n.c)+'</p><div class="progress" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+Math.round(n.pct)+'"><i style="width:'+n.pct.toFixed(1)+'%"></i></div></article>';
+  }else if(n.type==='next'){
+    h='<article class="now"><div class="head"><span class="eyebrow">Prochain cours</span><span class="pill">dans '+fmtDur(Math.ceil(n.delta))+'</span></div>'+
+      '<h2>'+esc(n.c.name)+'</h2><p class="meta">'+whenText(n)+(n.c.room?' · '+esc(n.c.room):'')+'</p></article>';
+  }else{
+    h='<article class="now empty"><h2>Aucun cours enregistré</h2><p>Ajoute ton premier cours pour recevoir un rappel avant chaque séance.</p></article>';
+  }
+  el.innerHTML=h;
+}
+
+/* ---------- week strip + list ---------- */
+function renderDays(){
+  var t=new Date(),wd=wdOf(t),mon=new Date(t.getFullYear(),t.getMonth(),t.getDate()-wd),h='';
+  for(var i=0;i<7;i++){
+    var d=new Date(mon.getFullYear(),mon.getMonth(),mon.getDate()+i);
+    var has=courses.some(function(c){return c.days.indexOf(i)>-1});
+    h+='<button class="day'+(has?' has':'')+(i===wd?' today':'')+'" data-d="'+i+'" aria-pressed="'+(i===sel)+'" aria-label="'+DAYS_LONG[i]+' '+d.getDate()+'"><small>'+DAYS[i]+'</small><strong>'+d.getDate()+'</strong><span class="dot"></span></button>';
+  }
+  $('#days').innerHTML=h;
+}
+function renderList(){
+  var t=new Date(),wd=wdOf(t),m=t.getHours()*60+t.getMinutes();
+  var list=courses.filter(function(c){return c.days.indexOf(sel)>-1}).sort(function(a,b){return mins(a.start)-mins(b.start)});
+  $('#day-name').textContent=DAYS_LONG[sel]+(sel===wd?' · aujourd\'hui':'');
+  $('#day-count').textContent=list.length?list.length+(list.length>1?' cours':' cours'):'';
+  if(!list.length){
+    $('#list').innerHTML='<li class="empty-day"><span>Rien de prévu ce jour.</span><button class="btn ghost small" data-add="1">Ajouter un cours</button></li>';
+    return;
+  }
+  $('#list').innerHTML=list.map(function(c){
+    var isToday=sel===wd,live=isToday&&mins(c.start)<=m&&m<mins(c.end),past=isToday&&mins(c.end)<=m;
+    return '<li class="item'+(live?' live':'')+(past?' past':'')+'"><div class="time"><b>'+c.start+'</b><span>'+c.end+'</span></div>'+
+      '<button class="card" data-id="'+c.id+'"><span class="name"><i class="swatch" style="background:'+colorOf(c.name)+'"></i><span class="t">'+esc(c.name)+'</span>'+(live?'<span class="tag gold">En cours</span>':'')+(c.ex?'<span class="tag">Exemple</span>':'')+'</span>'+
+      '<span class="info">'+(c.room?'<span>'+pinSvg+esc(c.room)+'</span>':'')+'<span>'+bellSvg+leadText(c.lead)+'</span></span></button></li>';
+  }).join('');
+}
+function isIOS(){return /iphone|ipad|ipod/i.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&navigator.maxTouchPoints>1)}
+function standalone(){return window.navigator.standalone===true||(window.matchMedia&&matchMedia('(display-mode: standalone)').matches)}
+function renderBanners(){
+  var h='';
+  if(pendingImport){
+    h+='<div class="banner"><span><b>Un emploi du temps t\'a été envoyé</b> ('+pendingImport.length+(pendingImport.length>1?' cours':' cours')+'). Importer remplace tes cours actuels.</span><div class="row"><button class="btn primary small" data-act="import">Importer</button><button class="btn ghost small" data-act="skip">Ignorer</button></div></div>';
+  }
+  if(courses.some(function(c){return c.ex})){
+    h+='<div class="banner"><span><b>Ces cours sont des exemples.</b> Ajoute tes vrais cours, puis efface les exemples.</span><div class="row"><button class="btn ghost small" data-act="clear-ex">Effacer les exemples</button></div></div>';
+  }
+  var hinted=false;try{hinted=localStorage.getItem(HINT)==='1'}catch(e){}
+  if(isIOS()&&!standalone()&&!hinted){
+    h+='<div class="banner"><span><b>Installe l\'appli pour recevoir les notifications.</b> Dans Safari, touche Partager puis « Sur l\'écran d\'accueil ».</span><div class="row"><button class="btn ghost small" data-act="hint-ok">Compris</button></div></div>';
+  }
+  $('#banners').innerHTML=h;
+}
+function renderAll(){
+  var d=new Date(),s=d.toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long'});
+  $('#today-label').textContent=s.charAt(0).toUpperCase()+s.slice(1);
+  renderBanners();renderNow();renderDays();renderList();
+}
+
+/* ---------- toast ---------- */
+var toastT;
+function toast(msg){
+  var el=$('#toast');el.textContent=msg;el.hidden=false;clearTimeout(toastT);
+  toastT=setTimeout(function(){el.hidden=true},5000);
+}
+
+/* ---------- notifications ---------- */
+function canNotify(){return 'Notification' in window}
+function notify(title,body,tag){
+  var opts={body:body,icon:'icon-192.png',badge:'favicon.png',tag:tag||'da'};
+  function fallback(){try{new Notification(title,opts)}catch(e){toast(title)}}
+  if('serviceWorker' in navigator){
+    navigator.serviceWorker.ready.then(function(r){return r.showNotification(title,opts)}).catch(fallback);
+  }else fallback();
+}
+function fire(c){
+  var title=c.lead>0?c.name+' dans '+(c.lead===60?'1 h':c.lead+' min'):c.name+' commence maintenant';
+  var body=c.start+' – '+c.end+(c.room?' · '+c.room:'');
+  if(canNotify()&&Notification.permission==='granted')notify(title,body,'c-'+c.id);
+  else toast(title+' · '+body);
+}
+function getFired(){try{return JSON.parse(localStorage.getItem(FIRED))||{}}catch(e){return {}}}
+function checkReminders(){
+  var d=new Date(),wd=wdOf(d),nowM=d.getHours()*60+d.getMinutes(),dk=ymd(d),fired=getFired(),changed=false;
+  courses.forEach(function(c){
+    if(c.lead<0||c.days.indexOf(wd)<0)return;
+    var trig=mins(c.start)-c.lead;
+    if(nowM<trig||nowM>trig+2||nowM>=mins(c.end))return;
+    var k=dk+'|'+c.id;if(fired[k])return;
+    fired[k]=1;changed=true;fire(c);
+  });
+  if(changed){
+    var keep={};Object.keys(fired).forEach(function(k){if(k.indexOf(dk)===0)keep[k]=1});
+    try{localStorage.setItem(FIRED,JSON.stringify(keep))}catch(e){}
+  }
+}
+function updateNotifUI(){
+  var t=$('#notif-text'),b=$('#btn-notif'),test=$('#btn-test');
+  test.hidden=true;b.hidden=false;
+  if(!canNotify()){
+    t.textContent=isIOS()&&!standalone()?'Sur iPhone, ajoute d\'abord l\'appli à l\'écran d\'accueil (Partager puis « Sur l\'écran d\'accueil »), ouvre-la depuis son icône, puis reviens ici.':'Ton navigateur ne permet pas les notifications. Utilise Calendrier ci-dessous.';
+    b.hidden=true;return;
+  }
+  var p=Notification.permission;
+  if(p==='granted'){t.innerHTML='<span class="ok">Notifications activées.</span> Tu recevras un rappel selon le délai choisi pour chaque cours.';b.hidden=true;test.hidden=false}
+  else if(p==='denied'){t.textContent='Les notifications sont refusées. Pour les autoriser : Réglages de l\'iPhone, Notifications, Daniel Academy.';b.hidden=true}
+  else{t.textContent='Autorise les notifications pour être prévenu avant chaque cours.'}
+}
+
+/* ---------- calendar export (.ics) ---------- */
+function icsEsc(s){return String(s).replace(/\\/g,'\\\\').replace(/;/g,'\\;').replace(/,/g,'\\,').replace(/\n/g,'\\n')}
+function buildICS(){
+  var n=new Date(),stamp=n.getUTCFullYear()+pad(n.getUTCMonth()+1)+pad(n.getUTCDate())+'T'+pad(n.getUTCHours())+pad(n.getUTCMinutes())+pad(n.getUTCSeconds())+'Z';
+  var today=new Date(n.getFullYear(),n.getMonth(),n.getDate()),wd=wdOf(today);
+  var L=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//Daniel Academy//Emploi du temps//FR','CALSCALE:GREGORIAN','X-WR-CALNAME:Daniel Academy'];
+  courses.forEach(function(c){
+    c.days.forEach(function(d){
+      var date=new Date(today.getFullYear(),today.getMonth(),today.getDate()+((d-wd+7)%7)),ds=ymd(date);
+      L.push('BEGIN:VEVENT','UID:'+c.id+'-'+d+'@danielacademy','DTSTAMP:'+stamp,
+        'DTSTART:'+ds+'T'+c.start.replace(':','')+'00','DTEND:'+ds+'T'+c.end.replace(':','')+'00',
+        'RRULE:FREQ=WEEKLY;BYDAY='+BYDAY[d],'SUMMARY:'+icsEsc(c.name));
+      if(c.room)L.push('LOCATION:'+icsEsc(c.room));
+      if(c.lead>=0)L.push('BEGIN:VALARM','ACTION:DISPLAY','DESCRIPTION:'+icsEsc(c.name),'TRIGGER:'+(c.lead===0?'PT0S':'-PT'+c.lead+'M'),'END:VALARM');
+      L.push('END:VEVENT');
+    });
+  });
+  L.push('END:VCALENDAR');
+  return L.join('\r\n');
+}
+function exportICS(){
+  if(!courses.length){toast('Ajoute au moins un cours avant d\'exporter.');return}
+  var text=buildICS(),name='emploi-du-temps-daniel-academy.ics';
+  try{
+    var file=new File([text],name,{type:'text/calendar'});
+    if(navigator.canShare&&navigator.canShare({files:[file]})){
+      navigator.share({files:[file],title:'Emploi du temps Daniel Academy'}).catch(function(e){if(e&&e.name!=='AbortError')download()});
+      return;
+    }
+  }catch(e){}
+  download();
+  function download(){
+    var url=URL.createObjectURL(new Blob([text],{type:'text/calendar'})),a=document.createElement('a');
+    a.href=url;a.download=name;document.body.appendChild(a);a.click();a.remove();
+    setTimeout(function(){URL.revokeObjectURL(url)},4000);
+  }
+}
+
+/* ---------- course form ---------- */
+var chipDays=[];
+function renderChips(){
+  $('#f-days').innerHTML=DAYS.map(function(d,i){return '<button type="button" class="chip" data-d="'+i+'" aria-pressed="'+(chipDays.indexOf(i)>-1)+'">'+d+'</button>'}).join('');
+}
+function openCourse(id){
+  var c=id?courses.filter(function(x){return x.id===id})[0]:null;
+  editingId=c?c.id:null;
+  $('#course-title').textContent=c?'Modifier le cours':'Nouveau cours';
+  $('#f-name').value=c?c.name:'';
+  chipDays=c?c.days.slice():[sel];
+  $('#f-start').value=c?c.start:'08:00';
+  $('#f-end').value=c?c.end:'10:00';
+  $('#f-room').value=c?c.room:'';
+  $('#f-lead').value=String(c?c.lead:10);
+  $('#f-err').hidden=true;
+  var del=$('#btn-del');del.hidden=!c;del.classList.remove('armed');del.textContent='Supprimer ce cours';
+  renderChips();
+  $('#dlg-course').showModal();
+}
+function submitCourse(e){
+  e.preventDefault();
+  var name=$('#f-name').value.trim(),start=$('#f-start').value,end=$('#f-end').value,err=$('#f-err'),msg='';
+  if(!name)msg='Écris le nom de la matière.';
+  else if(!chipDays.length)msg='Choisis au moins un jour.';
+  else if(!TIME.test(start)||!TIME.test(end))msg='Choisis l\'heure de début et de fin.';
+  else if(mins(end)<=mins(start))msg='L\'heure de fin doit être après le début.';
+  if(msg){err.textContent=msg;err.hidden=false;return}
+  var data={name:name,days:chipDays.slice().sort(),start:start,end:end,room:$('#f-room').value.trim(),lead:parseInt($('#f-lead').value,10)};
+  if(editingId){
+    courses=courses.map(function(c){return c.id===editingId?Object.assign({},data,{id:c.id}):c});
+  }else{
+    data.id=uid();courses.push(data);
+  }
+  save();$('#dlg-course').close();
+  if(chipDays.indexOf(sel)<0)sel=chipDays[0];
+  renderAll();toast(editingId?'Cours modifié.':'Cours ajouté.');
+}
+
+/* ---------- events ---------- */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('button');
+  if(e.target.tagName==='DIALOG'){e.target.close();return}
+  if(!t)return;
+  if(t.hasAttribute('data-close')){t.closest('dialog').close();return}
+  if(t.classList.contains('day')){sel=+t.dataset.d;renderDays();renderList();return}
+  if(t.classList.contains('card')){openCourse(t.dataset.id);return}
+  if(t.dataset.add){openCourse();return}
+  if(t.classList.contains('chip')){
+    var d=+t.dataset.d,i=chipDays.indexOf(d);
+    if(i>-1)chipDays.splice(i,1);else chipDays.push(d);
+    t.setAttribute('aria-pressed',String(i<0));return;
+  }
+  var a=t.dataset.act;
+  if(a==='import'){courses=pendingImport;pendingImport=null;save();clearHash();renderAll();toast('Emploi du temps importé.')}
+  else if(a==='skip'){pendingImport=null;clearHash();renderBanners()}
+  else if(a==='clear-ex'){courses=courses.filter(function(c){return !c.ex});save();renderAll()}
+  else if(a==='hint-ok'){try{localStorage.setItem(HINT,'1')}catch(e){}renderBanners()}
+});
+$('#fab').addEventListener('click',function(){openCourse()});
+$('#form-course').addEventListener('submit',submitCourse);
+$('#btn-del').addEventListener('click',function(){
+  var b=this;
+  if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='Confirmer la suppression';return}
+  courses=courses.filter(function(c){return c.id!==editingId});save();
+  $('#dlg-course').close();renderAll();toast('Cours supprimé.');
+});
+$('#open-settings').addEventListener('click',function(){
+  updateNotifUI();$('#share-url').hidden=true;
+  var r=$('#btn-reset');r.classList.remove('armed');r.textContent='Effacer tous mes cours';
+  $('#dlg-settings').showModal();
+});
+$('#btn-notif').addEventListener('click',function(){
+  if(!canNotify())return;
+  var done=function(p){updateNotifUI();if(p==='granted')notify('Notifications activées','Tu recevras un rappel avant chaque cours.','welcome')};
+  try{var r=Notification.requestPermission(done);if(r&&r.then)r.then(done)}catch(e){}
+});
+$('#btn-test').addEventListener('click',function(){notify('Test Daniel Academy','Les rappels fonctionnent sur cet appareil.','test');toast('Notification envoyée.')});
+$('#btn-ics').addEventListener('click',exportICS);
+$('#btn-share').addEventListener('click',function(){
+  var arr=courses.filter(function(c){return !c.ex}).map(function(c){return [c.name,c.days.join(''),c.start,c.end,c.room,c.lead]});
+  if(!arr.length){toast('Ajoute au moins un vrai cours avant de partager.');return}
+  var url=location.origin+location.pathname+'#s='+b64e(JSON.stringify(arr));
+  if(navigator.share){
+    navigator.share({title:'Emploi du temps Daniel Academy',text:'Voici mon emploi du temps. Ouvre le lien pour l\'importer.',url:url}).catch(function(e){if(e&&e.name!=='AbortError')showUrl()});
+    return;
+  }
+  showUrl();
+  function showUrl(){
+    var inp=$('#share-url');inp.value=url;inp.hidden=false;inp.focus();inp.select();
+    if(navigator.clipboard&&navigator.clipboard.writeText)navigator.clipboard.writeText(url).then(function(){toast('Lien copié. Colle-le dans WhatsApp.')},function(){toast('Copie le lien affiché.')});
+    else toast('Copie le lien affiché.');
+  }
+});
+$('#btn-reset').addEventListener('click',function(){
+  var b=this;
+  if(!b.classList.contains('armed')){b.classList.add('armed');b.textContent='Confirmer : tout effacer';return}
+  courses=[];save();$('#dlg-settings').close();renderAll();toast('Tous les cours ont été effacés.');
+});
+
+/* ---------- start ---------- */
+var stored=load();
+if(stored){courses=stored}else{courses=examples();save()}
+sel=wdOf(new Date());
+pendingImport=readShare();
+renderAll();
+checkReminders();
+setInterval(function(){renderNow();checkReminders();if(!document.querySelector('dialog[open]'))renderList()},20000);
+document.addEventListener('visibilitychange',function(){if(!document.hidden){renderAll();checkReminders()}});
+if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('sw.js').catch(function(){})})}
+})();
+</script>
+</body>
+</html>
